@@ -58,6 +58,17 @@ export default function LearnPage() {
         </div>
       </header>
 
+      {/* Floating Tutor FAB (Floating Action Button) */}
+      <Link 
+        href="/tutor"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-stone-900 text-white rounded-full flex items-center justify-center shadow-lg hover:-translate-y-1 hover:shadow-xl transition-all z-50 group"
+      >
+        <span className="text-2xl">🤖</span>
+        <span className="absolute right-full mr-3 bg-stone-900 text-white text-xs font-bold py-1.5 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+          Chat with AI Tutor
+        </span>
+      </Link>
+
       <div className="max-w-lg mx-auto px-5 py-6 space-y-5">
         {/* Progress overview */}
         <div className="card p-5">
