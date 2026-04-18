@@ -64,11 +64,13 @@ Student Profile:
 NCERT chapter sequence for ${diagnostic.subject} Class ${student.classGrade}:
 ${ncertSequence.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
-Generate a 4-week personalized curriculum. Return JSON only with this shape:
+Generate a 4-week personalized curriculum. Return JSON exactly matching this shape. Distribute topics evenly across all 4 weeks. DO NOT leave any week empty.
 {
   "weeklyPlan": {
-    "week1": [{ "moduleId": "...", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }],
-    "week2": [], "week3": [], "week4": []
+    "week1": [{ "moduleId": "m1", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }],
+    "week2": [{ "moduleId": "m2", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": ["m1"] }],
+    "week3": [{ "moduleId": "m3", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }],
+    "week4": [{ "moduleId": "m4", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }]
   },
   "totalModules": 12,
   "estimatedWeeklyMinutes": 90
@@ -82,13 +84,13 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
       userMessage,
     });
 
-    const curriculumData = parseAIJson(rawResponse);
+    const curriculumData = parseAIJson(rawResponse) || {};
 
     const allModules = [
-      ...(curriculumData.weeklyPlan?.week1 ?? []),
-      ...(curriculumData.weeklyPlan?.week2 ?? []),
-      ...(curriculumData.weeklyPlan?.week3 ?? []),
-      ...(curriculumData.weeklyPlan?.week4 ?? []),
+      ...(curriculumData?.weeklyPlan?.week1 ?? []),
+      ...(curriculumData?.weeklyPlan?.week2 ?? []),
+      ...(curriculumData?.weeklyPlan?.week3 ?? []),
+      ...(curriculumData?.weeklyPlan?.week4 ?? []),
     ];
 
     if (allModules.length === 0) {
