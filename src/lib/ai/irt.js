@@ -44,7 +44,6 @@ function probabilityCorrect(theta, difficulty, isMCQ) {
  * @returns {number} Updated theta (clamped 0–1)
  */
 function updateTheta(theta, correct, difficulty) {
-  const b = normalizeDifficulty(difficulty);
   const p = probabilityCorrect(theta, difficulty, false);
   // Gradient step: Fisher scoring
   const weight = p * (1 - p);

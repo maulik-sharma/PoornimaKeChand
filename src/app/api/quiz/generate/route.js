@@ -25,12 +25,12 @@ export async function POST(req) {
 
     const { moduleId, studentId, questionCount, examMode } = parsed.data;
 
-    const module = await prisma.module.findUnique({
+    const dbModule = await prisma.module.findUnique({
       where: { id: moduleId },
       include: { curriculum: true },
     });
 
-    if (!module) {
+    if (!dbModule) {
       return NextResponse.json({ error: "Module not found" }, { status: 404 });
     }
 
@@ -47,10 +47,10 @@ export async function POST(req) {
 
     const userMessage = `
 Generate ${questionCount} quiz questions for:
-- Topic: ${module.topic}
-- Subtopic: ${module.subtopic}
-- Class: ${module.classGrade}
-- Subject: ${module.subject}
+- Topic: ${dbModule.topic}
+- Subtopic: ${dbModule.subtopic}
+- Class: ${dbModule.classGrade}
+- Subject: ${dbModule.subject}
 - Difficulty range: ${examMode ? "3-5" : "2-4"} (1=easiest, 5=hardest)
 - Avoid these question fingerprints (already asked recently): ${recentFingerprints.slice(-20).join(", ") || "none"}
 

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 import { redis } from "@/lib/cache/redis";
 import { CACHE_KEYS } from "@/lib/cache/keys";
 import { NCERT_QUESTIONS } from "@/lib/content/question-bank";
-import { selectNextDifficulty } from "@/lib/ai/irt";
+
 
 /**
  * POST /api/diagnostic/start

@@ -23,23 +23,23 @@ export async function POST(req) {
       return NextResponse.json({ content: typeof cached === "string" ? parseAIJson(cached) : cached, cached: true });
     }
 
-    const module = await prisma.module.findUnique({
+    const dbModule = await prisma.module.findUnique({
       where: { id: moduleId },
       include: { curriculum: { include: { student: true } } },
     });
 
-    if (!module) {
+    if (!dbModule) {
       return NextResponse.json({ error: "Module not found" }, { status: 404 });
     }
 
-    if (module.contentJson) {
-      return NextResponse.json({ content: module.contentJson, cached: true });
+    if (dbModule.contentJson) {
+      return NextResponse.json({ content: dbModule.contentJson, cached: true });
     }
 
-    const student = module.curriculum.student;
+    const student = dbModule.curriculum.student;
 
     const latestDiagnostic = await prisma.diagnosticSession.findFirst({
-      where: { studentId, subject: module.subject },
+      where: { studentId, subject: dbModule.subject },
       orderBy: { completedAt: "desc" },
     });
 
@@ -55,10 +55,10 @@ export async function POST(req) {
 
     const userMessage = `
 Generate a concept explanation for:
-- Topic: ${module.topic}
-- Subtopic: ${module.subtopic}
-- Class: ${module.classGrade}
-- Subject: ${module.subject}
+- Topic: ${dbModule.topic}
+- Subtopic: ${dbModule.subtopic}
+- Class: ${dbModule.classGrade}
+- Subject: ${dbModule.subject}
 - Language: ${student.languagePref}
 - Student ability (0=beginner, 1=advanced): ${abilityScore.toFixed(2)}
 

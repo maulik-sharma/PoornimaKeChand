@@ -67,17 +67,17 @@ export async function GET(req) {
 
       let totalScore = 0, attemptCount = 0, modulesCompleted = 0;
 
-      for (const module of curriculum.modules) {
-        if (module.status === "completed") modulesCompleted++;
-        for (const attempt of module.quizAttempts) {
+      for (const mod of curriculum.modules) {
+        if (mod.status === "completed") modulesCompleted++;
+        for (const attempt of mod.quizAttempts) {
           totalScore += attempt.score;
           attemptCount++;
-          if (!topicStats[module.topic]) {
-            topicStats[module.topic] = { totalAttempts: 0, totalScore: 0, studentsStruggling: 0 };
+          if (!topicStats[mod.topic]) {
+            topicStats[mod.topic] = { totalAttempts: 0, totalScore: 0, studentsStruggling: 0 };
           }
-          topicStats[module.topic].totalAttempts++;
-          topicStats[module.topic].totalScore += attempt.score;
-          if (attempt.score < 60) topicStats[module.topic].studentsStruggling++;
+          topicStats[mod.topic].totalAttempts++;
+          topicStats[mod.topic].totalScore += attempt.score;
+          if (attempt.score < 60) topicStats[mod.topic].studentsStruggling++;
         }
       }
 

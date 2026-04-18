@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const SUBJECTS = ["maths", "science", "english", "social_science", "hindi"];
 const CLASSES = [6, 7, 8, 9, 10, 11, 12];
@@ -12,14 +12,14 @@ const SEVERITY_CONFIG = {
 };
 
 export default function TeacherDashboard() {
-  const [teacherId, setTeacherId] = useState("teacher_meena_01");
+  const [teacherId] = useState("teacher_meena_01");
   const [classGrade, setClassGrade] = useState(9);
   const [subject, setSubject] = useState("maths");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function fetchAnalytics() {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -33,9 +33,9 @@ export default function TeacherDashboard() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [teacherId, classGrade, subject]);
 
-  useEffect(() => { fetchAnalytics(); }, [classGrade, subject]);
+  useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
 
   return (
     <main className="min-h-dvh bg-stone-50">

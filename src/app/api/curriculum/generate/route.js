@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { redis } from "@/lib/cache/redis";
-import { CACHE_KEYS, CACHE_TTL } from "@/lib/cache/keys";
+import { CACHE_KEYS } from "@/lib/cache/keys";
 import { callWithFallback, parseAIJson } from "@/lib/ai/fallback";
 import { CurriculumGenerateSchema } from "@/lib/utils/validators";
 import { NCERT_SEQUENCES } from "@/lib/content/ncert-sequences";

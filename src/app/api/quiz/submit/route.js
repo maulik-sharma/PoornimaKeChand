@@ -22,8 +22,8 @@ export async function POST(req) {
 
     const { studentId, moduleId, answers, timeTakenSecs, examMode } = parsed.data;
 
-    const module = await prisma.module.findUnique({ where: { id: moduleId } });
-    if (!module) {
+    const dbModule = await prisma.module.findUnique({ where: { id: moduleId } });
+    if (!dbModule) {
       return NextResponse.json({ error: "Module not found" }, { status: 404 });
     }
 
@@ -70,7 +70,7 @@ export async function POST(req) {
     });
 
     let xpEarned = 0;
-    if (score >= 60 && module.status !== "completed") {
+    if (score >= 60 && dbModule.status !== "completed") {
       await prisma.module.update({
         where: { id: moduleId },
         data: { status: "completed", completedAt: new Date() },
@@ -83,14 +83,14 @@ export async function POST(req) {
     }
 
     const existingCard = await prisma.spacedRepetitionCard.findUnique({
-      where: { studentId_topic_subject: { studentId, topic: module.topic, subject: module.subject } },
+      where: { studentId_topic_subject: { studentId, topic: dbModule.topic, subject: dbModule.subject } },
     });
 
     const cardState = existingCard ?? DEFAULT_CARD;
     const srResult = processQuizResult(cardState, score);
 
     await prisma.spacedRepetitionCard.upsert({
-      where: { studentId_topic_subject: { studentId, topic: module.topic, subject: module.subject } },
+      where: { studentId_topic_subject: { studentId, topic: dbModule.topic, subject: dbModule.subject } },
       update: {
         ease: srResult.ease,
         interval: srResult.interval,
@@ -100,8 +100,8 @@ export async function POST(req) {
       },
       create: {
         studentId,
-        topic: module.topic,
-        subject: module.subject,
+        topic: dbModule.topic,
+        subject: dbModule.subject,
         ease: srResult.ease,
         interval: srResult.interval,
         repetitions: srResult.repetitions,
@@ -113,16 +113,16 @@ export async function POST(req) {
     // Insert remedial module if student failed badly
     if (score < 50) {
       const existingRemedial = await prisma.module.findFirst({
-        where: { curriculumId: module.curriculumId, topic: module.topic, difficulty: { lt: 3 }, status: "not_started" },
+        where: { curriculumId: dbModule.curriculumId, topic: dbModule.topic, difficulty: { lt: 3 }, status: "not_started" },
       });
       if (!existingRemedial) {
         await prisma.module.create({
           data: {
-            curriculumId: module.curriculumId,
-            topic: module.topic,
-            subtopic: `${module.topic} — Remedial Practice`,
-            classGrade: module.classGrade,
-            subject: module.subject,
+            curriculumId: dbModule.curriculumId,
+            topic: dbModule.topic,
+            subtopic: `${dbModule.topic} — Remedial Practice`,
+            classGrade: dbModule.classGrade,
+            subject: dbModule.subject,
             difficulty: Math.max(1, 2),
             estimatedMins: 10,
             status: "not_started",

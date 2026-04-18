@@ -15,7 +15,7 @@ export default function LearnPage() {
   const [modules, setModules] = useState([]);
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const curriculumId = typeof window !== "undefined" ? sessionStorage.getItem("curriculumId") : null;
+  // curriculumId is available in sessionStorage if needed for future fetches
 
   useEffect(() => {
     const studentId = sessionStorage.getItem("studentId");
