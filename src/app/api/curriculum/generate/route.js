@@ -91,6 +91,14 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
       ...(curriculumData.weeklyPlan?.week4 ?? []),
     ];
 
+    if (allModules.length === 0) {
+      console.error("[curriculum/generate] AI returned an empty plan — all AI providers may be down or keys are invalid.");
+      return NextResponse.json(
+        { error: "AI could not generate a study plan. Please check your API keys or try again later." },
+        { status: 503 }
+      );
+    }
+
     // ── Step 1: Create curriculum + all modules (no prerequisite links yet) ──
     const curriculum = await prisma.curriculum.create({
       data: {
