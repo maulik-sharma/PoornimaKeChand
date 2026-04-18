@@ -1,7 +1,5 @@
-// @ts-check
-const { PrismaClient } = require("@prisma/client");
-
-const prisma = new PrismaClient();
+require('dotenv').config();
+const { prisma } = require("../src/lib/db/prisma.js");
 
 async function main() {
   console.info("🌱 Seeding database...");
