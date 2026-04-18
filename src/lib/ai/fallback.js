@@ -106,7 +106,7 @@ async function callWithFallback({ useCase, cacheKey, systemPrompt, userMessage }
     const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
     const gemini = new ChatGoogleGenerativeAI({
       apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-      modelName: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       maxOutputTokens: 4096,
       temperature: 0.3,
     });

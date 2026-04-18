@@ -460,7 +460,7 @@ export async function POST(req) {
         const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
         const gemini = new ChatGoogleGenerativeAI({
           apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-          modelName: "gemini-1.5-flash",
+          model: "gemini-2.5-flash",
           maxOutputTokens: 2048,
           temperature: 0.7,
         });
