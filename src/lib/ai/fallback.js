@@ -10,17 +10,27 @@ const { CACHE_TTL } = require("@/lib/cache/keys");
 function parseAIJson(raw) {
   if (!raw) return null;
   // Strip markdown code fences
-  const cleaned = raw
+  let cleaned = raw
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/g, "")
     .trim();
+
+  // Repair common LLM JSON syntax errors
+  cleaned = cleaned.replace(/,\s*([\]}])/g, '$1'); // Remove trailing commas
+  cleaned = cleaned.replace(/}\s*{/g, '},{');      // Insert missing commas between objects
+  cleaned = cleaned.replace(/\]\s*\[/g, '],[');    // Insert missing commas between arrays
+  
   try {
     return JSON.parse(cleaned);
   } catch {
     // Try finding JSON with regex
     const jsonMatch = cleaned.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]);
+      try {
+        return JSON.parse(jsonMatch[1]);
+      } catch {
+        return null;
+      }
     }
     return null;
   }
@@ -33,14 +43,19 @@ function parseAIJson(raw) {
 const STATIC_FALLBACKS = {
   curriculum: {
     weeklyPlan: {
-      week1: [],
-      week2: [],
+      week1: [
+        { moduleId: "mod_static_1", topic: "Introductory Concepts", subtopic: "Core Fundamentals", difficulty: 2, estimatedMins: 20 },
+        { moduleId: "mod_static_2", topic: "Basic Applications", subtopic: "Real-world Examples", difficulty: 3, estimatedMins: 25, prerequisites: ["mod_static_1"] }
+      ],
+      week2: [
+        { moduleId: "mod_static_3", topic: "Intermediate Formulas", subtopic: "Solving Equations", difficulty: 4, estimatedMins: 30, prerequisites: ["mod_static_2"] }
+      ],
       week3: [],
-      week4: [],
+      week4: []
     },
-    totalModules: 0,
-    estimatedWeeklyMinutes: 0,
-    _fallback: true,
+    totalModules: 3,
+    estimatedWeeklyMinutes: 45,
+    _fallback: true
   },
   explanation: {
     title: "Content Loading...",
@@ -129,9 +144,13 @@ async function callWithFallback({ useCase, cacheKey, systemPrompt, userMessage }
     console.warn("[fallback] Gemini also failed:", geminiErr.message);
   }
 
-  // ── 4. Return static fallback ─────────────────────────────
+  // ── 4. Return static fallback (or throw if none defined) ─────────────────
+  const fallbackData = STATIC_FALLBACKS[useCase];
+  if (fallbackData === null || fallbackData === undefined) {
+    throw new Error(`All AI providers failed for useCase: ${useCase}. Please check your API keys or try again later.`);
+  }
   console.warn(`[fallback] All AI failed for useCase: ${useCase}. Using static fallback.`);
-  return JSON.stringify(STATIC_FALLBACKS[useCase] ?? { _fallback: true, error: "AI unavailable" });
+  return JSON.stringify(fallbackData);
 }
 
-module.exports = { callWithFallback, parseAIJson };
+module.exports = { callWithFallback, parseAIJson, STATIC_FALLBACKS };

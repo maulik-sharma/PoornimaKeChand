@@ -36,8 +36,23 @@ export async function POST(req) {
 
     const cacheKey = CACHE_KEYS.curriculum(studentId, diagnostic.subject);
     const cached = await redis.get(cacheKey);
+    let parsedCache = null;
     if (cached) {
-      return NextResponse.json({ curriculum: typeof cached === "string" ? parseAIJson(cached) : cached, cached: true });
+      parsedCache = typeof cached === "string" ? parseAIJson(cached) : cached;
+    }
+    
+    if (parsedCache) {
+      // Find the existing curriculum record so we can return its real DB id
+      const existingCurriculum = await prisma.curriculum.findFirst({
+        where: { studentId, subject: diagnostic.subject },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      });
+      return NextResponse.json({
+        curriculum: parsedCache,
+        curriculumId: existingCurriculum?.id ?? null,
+        cached: true,
+      });
     }
 
     const promptRecord = await prisma.promptRegistry.findFirst({
@@ -82,7 +97,7 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
       userMessage,
     });
 
-    const curriculumData = parseAIJson(rawResponse);
+    const curriculumData = parseAIJson(rawResponse) || {};
 
     const allModules = [
       ...(curriculumData.weeklyPlan?.week1 ?? []),
@@ -91,12 +106,19 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
       ...(curriculumData.weeklyPlan?.week4 ?? []),
     ];
 
-    if (allModules.length === 0) {
-      console.error("[curriculum/generate] AI returned an empty plan — all AI providers may be down or keys are invalid.");
-      return NextResponse.json(
-        { error: "AI could not generate a study plan. Please check your API keys or try again later." },
-        { status: 503 }
-      );
+    let finalCurriculumData = curriculumData;
+    let finalModules = allModules;
+
+    if (finalModules.length === 0) {
+      console.warn("[curriculum/generate] AI returned empty plan or invalid JSON. Using static fallback curriculum.");
+      const { STATIC_FALLBACKS } = require("@/lib/ai/fallback");
+      finalCurriculumData = STATIC_FALLBACKS.curriculum;
+      finalModules = [
+        ...(finalCurriculumData.weeklyPlan.week1 || []),
+        ...(finalCurriculumData.weeklyPlan.week2 || []),
+        ...(finalCurriculumData.weeklyPlan.week3 || []),
+        ...(finalCurriculumData.weeklyPlan.week4 || []),
+      ];
     }
 
     // ── Step 1: Create curriculum + all modules (no prerequisite links yet) ──
@@ -105,15 +127,10 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
         studentId,
         diagnosticId,
         subject: diagnostic.subject,
-        modulesJson: allModules,
-        weeklyTargetJson: {
-          week1: curriculumData.weeklyPlan?.week1?.map((m) => m.moduleId) ?? [],
-          week2: curriculumData.weeklyPlan?.week2?.map((m) => m.moduleId) ?? [],
-          week3: curriculumData.weeklyPlan?.week3?.map((m) => m.moduleId) ?? [],
-          week4: curriculumData.weeklyPlan?.week4?.map((m) => m.moduleId) ?? [],
-        },
+        modulesJson: finalModules,
+        weeklyTargetJson: {},
         modules: {
-          create: allModules.map((m, index) => ({
+          create: finalModules.map((m, index) => ({
             topic: m.topic,
             subtopic: m.subtopic,
             classGrade: student.classGrade,
@@ -131,7 +148,7 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
     // ── Step 2: Link prerequisites using the AI's moduleId as a stable key ──
     // Build a map from the AI's temp moduleId → real DB id (by orderIndex match)
     const aiIdToDbId = new Map();
-    allModules.forEach((aiMod, index) => {
+    finalModules.forEach((aiMod, index) => {
       const dbMod = curriculum.modules[index];
       if (dbMod && aiMod.moduleId) {
         aiIdToDbId.set(aiMod.moduleId, dbMod.id);
@@ -139,7 +156,7 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
     });
 
     // For every module that has prerequisites listed, link them in the DB
-    const prereqUpdates = allModules
+    const prereqUpdates = finalModules
       .map((aiMod, index) => {
         const prereqIds = (aiMod.prerequisites ?? [])
           .map((prereqAiId) => aiIdToDbId.get(prereqAiId))
@@ -161,18 +178,32 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
       })
       .filter(Boolean);
 
+    const updateCurriculumTarget = prisma.curriculum.update({
+      where: { id: curriculum.id },
+      data: {
+        weeklyTargetJson: {
+          week1: finalCurriculumData.weeklyPlan?.week1?.map((m) => aiIdToDbId.get(m.moduleId)).filter(Boolean) || [],
+          week2: finalCurriculumData.weeklyPlan?.week2?.map((m) => aiIdToDbId.get(m.moduleId)).filter(Boolean) || [],
+          week3: finalCurriculumData.weeklyPlan?.week3?.map((m) => aiIdToDbId.get(m.moduleId)).filter(Boolean) || [],
+          week4: finalCurriculumData.weeklyPlan?.week4?.map((m) => aiIdToDbId.get(m.moduleId)).filter(Boolean) || [],
+        }
+      }
+    });
+    
+    prereqUpdates.push(updateCurriculumTarget);
+
     if (prereqUpdates.length > 0) {
       await Promise.all(prereqUpdates);
     }
 
     return NextResponse.json({
-      curriculum: curriculumData,
+      curriculum: finalCurriculumData,
       curriculumId: curriculum.id,
       totalModules: curriculum.modules.length,
       cached: false,
     });
   } catch (err) {
     console.error("[curriculum/generate] Error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error", details: err.message, stack: err.stack }, { status: 500 });
   }
 }
