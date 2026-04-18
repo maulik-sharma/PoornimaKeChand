@@ -440,7 +440,7 @@ export async function POST(req) {
       const { ChatAnthropic } = require("@langchain/anthropic");
       const claude = new ChatAnthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
-        modelName: "claude-3-5-sonnet-20241022",
+        modelName: "claude-haiku-4-5",
         maxTokens: 2048,
         temperature: 0.7,
       });

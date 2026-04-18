@@ -57,9 +57,9 @@ Student Profile:
 - Subject: ${diagnostic.subject}
 - Language preference: ${student.languagePref}
 - Ability score (0=beginner, 1=expert): ${diagnostic.abilityScore.toFixed(2)}
-- Mastered topics: ${gapMap.mastered?.join(", ") || "none"}
-- Gap topics (not yet learned): ${gapMap.gaps?.join(", ") || "none"}
-- Partial topics (needs reinforcement): ${gapMap.partial?.join(", ") || "none"}
+- Mastered topics: ${gapMap?.mastered?.join(", ") || "none"}
+- Gap topics (not yet learned): ${gapMap?.gaps?.join(", ") || "none"}
+- Partial topics (needs reinforcement): ${gapMap?.partial?.join(", ") || "none"}
 
 NCERT chapter sequence for ${diagnostic.subject} Class ${student.classGrade}:
 ${ncertSequence.map((c, i) => `${i + 1}. ${c}`).join("\n")}
@@ -67,10 +67,10 @@ ${ncertSequence.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 Generate a 4-week personalized curriculum. Return JSON exactly matching this shape. Distribute topics evenly across all 4 weeks. DO NOT leave any week empty.
 {
   "weeklyPlan": {
-    "week1": [{ "moduleId": "m1", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }],
-    "week2": [{ "moduleId": "m2", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": ["m1"] }],
-    "week3": [{ "moduleId": "m3", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }],
-    "week4": [{ "moduleId": "m4", "topic": "...", "subtopic": "...", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }]
+    "week1": [{ "moduleId": "m1", "topic": "Example Topic", "subtopic": "Example Subtopic", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }],
+    "week2": [{ "moduleId": "m2", "topic": "Example Topic", "subtopic": "Example Subtopic", "difficulty": 3, "estimatedMins": 20, "prerequisites": ["m1"] }],
+    "week3": [{ "moduleId": "m3", "topic": "Example Topic", "subtopic": "Example Subtopic", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }],
+    "week4": [{ "moduleId": "m4", "topic": "Example Topic", "subtopic": "Example Subtopic", "difficulty": 3, "estimatedMins": 20, "prerequisites": [] }]
   },
   "totalModules": 12,
   "estimatedWeeklyMinutes": 90
@@ -91,7 +91,7 @@ Generate a 4-week personalized curriculum. Return JSON exactly matching this sha
       ...(curriculumData?.weeklyPlan?.week2 ?? []),
       ...(curriculumData?.weeklyPlan?.week3 ?? []),
       ...(curriculumData?.weeklyPlan?.week4 ?? []),
-    ];
+    ].filter(m => m && typeof m === 'object');
 
     if (allModules.length === 0) {
       console.error("[curriculum/generate] AI returned an empty plan — all AI providers may be down or keys are invalid.");
@@ -109,15 +109,15 @@ Generate a 4-week personalized curriculum. Return JSON exactly matching this sha
         subject: diagnostic.subject,
         modulesJson: allModules,
         weeklyTargetJson: {
-          week1: curriculumData.weeklyPlan?.week1?.map((m) => m.moduleId) ?? [],
-          week2: curriculumData.weeklyPlan?.week2?.map((m) => m.moduleId) ?? [],
-          week3: curriculumData.weeklyPlan?.week3?.map((m) => m.moduleId) ?? [],
-          week4: curriculumData.weeklyPlan?.week4?.map((m) => m.moduleId) ?? [],
+          week1: curriculumData?.weeklyPlan?.week1?.map((m) => m.moduleId) ?? [],
+          week2: curriculumData?.weeklyPlan?.week2?.map((m) => m.moduleId) ?? [],
+          week3: curriculumData?.weeklyPlan?.week3?.map((m) => m.moduleId) ?? [],
+          week4: curriculumData?.weeklyPlan?.week4?.map((m) => m.moduleId) ?? [],
         },
         modules: {
           create: allModules.map((m, index) => ({
-            topic: m.topic,
-            subtopic: m.subtopic,
+            topic: m.topic || "Unknown Topic",
+            subtopic: m.subtopic || "",
             classGrade: student.classGrade,
             subject: diagnostic.subject,
             difficulty: m.difficulty ?? 3,

@@ -20,7 +20,11 @@ function parseAIJson(raw) {
     // Try finding JSON with regex
     const jsonMatch = cleaned.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]);
+      try {
+        return JSON.parse(jsonMatch[1]);
+      } catch (err2) {
+        return null;
+      }
     }
     return null;
   }
@@ -77,7 +81,7 @@ async function callWithFallback({ useCase, cacheKey, systemPrompt, userMessage }
     const { ChatAnthropic } = require("@langchain/anthropic");
     const claude = new ChatAnthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
-      modelName: "claude-3-5-sonnet-20241022",
+      modelName: "claude-haiku-4-5",
       maxTokens: 4096,
       temperature: 0.3,
     });
