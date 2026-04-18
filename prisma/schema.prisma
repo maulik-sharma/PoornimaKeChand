@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+model Student {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String   @default("")
+  classGrade   Int
+  languagePref String   @default("en")
+  totalXp      Int      @default(0)
+  streakDays   Int      @default(0)
+  lastActiveAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  diagnostics          DiagnosticSession[]
+  curricula            Curriculum[]
+  quizAttempts         QuizAttempt[]
+  spacedRepetitionCards SpacedRepetitionCard[]
+  nudgeLogs            NudgeLog[]
+  enrollments          ClassEnrollment[]
+}
+
+model Teacher {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @default("")
+  school    String   @default("")
+  createdAt DateTime @default(now())
+
+  enrollments ClassEnrollment[]
+}
+
+model ClassEnrollment {
+  id         String  @id @default(cuid())
+  teacherId  String
+  studentId  String
+  classGrade Int
+  subject    String
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, studentId, subject])
+}
+
+model DiagnosticSession {
+  id           String   @id @default(cuid())
+  studentId    String
+  subject      String
+  abilityScore Float    @default(0.5)
+  gapMapJson   Json     @default("{}")
+  answersJson  Json     @default("[]")
+  completedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  curricula  Curriculum[]
+}
+
+model Curriculum {
+  id              String   @id @default(cuid())
+  studentId       String
+  diagnosticId    String
+  subject         String
+  modulesJson     Json     @default("[]")
+  weeklyTargetJson Json    @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  student    Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  diagnostic DiagnosticSession @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+  modules    Module[]
+}
+
+model Module {
+  id           String    @id @default(cuid())
+  curriculumId String
+  topic        String
+  subtopic     String
+  classGrade   Int
+  subject      String
+  difficulty   Int       @default(3)
+  estimatedMins Int      @default(15)
+  orderIndex   Float     @default(0)
+  status       String    @default("not_started")
+  contentJson  Json?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  curriculum   Curriculum    @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  quizAttempts QuizAttempt[]
+}
+
+model QuizAttempt {
+  id           String   @id @default(cuid())
+  studentId    String
+  moduleId     String
+  score        Int
+  timeTakenSecs Int     @default(0)
+  examMode     Boolean  @default(false)
+  questionsJson Json    @default("[]")
+  createdAt    DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  module  Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model SpacedRepetitionCard {
+  id           String   @id @default(cuid())
+  studentId    String
+  topic        String
+  subject      String
+  ease         Float    @default(2.5)
+  interval     Int      @default(1)
+  repetitions  Int      @default(0)
+  nextReviewAt DateTime @default(now())
+  lastReviewAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, topic, subject])
+}
+
+model NudgeLog {
+  id        String   @id @default(cuid())
+  studentId String
+  type      String
+  channel   String
+  message   String
+  sentAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model PromptRegistry {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  template  String
+  version   Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

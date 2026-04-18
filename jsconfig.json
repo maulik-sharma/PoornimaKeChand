@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "checkJs": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "allowJs": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.js", "src/**/*.jsx", "tests/**/*.js"]
+}

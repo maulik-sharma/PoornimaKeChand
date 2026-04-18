@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+
+  /* Brand palette */
+  --brand-50:  #fff7ed;
+  --brand-100: #ffedd5;
+  --brand-400: #fb923c;
+  --brand-500: #f97316;
+  --brand-600: #ea580c;
+  --brand-700: #c2410c;
+
+  /* Semantic */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger:  #ef4444;
+  --info:    #3b82f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+}
+
+/* Smooth page transitions */
+@layer utilities {
+  .animate-in {
+    animation: slide-up 0.4s ease-out;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl border border-stone-200 shadow-sm;
+  }
+
+  .btn-primary {
+    @apply bg-brand-500 text-white font-medium rounded-xl px-6 py-3
+           hover:bg-brand-600 active:scale-95 transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-stone-700 font-medium rounded-xl px-6 py-3 border border-stone-200
+           hover:bg-stone-50 active:scale-95 transition-all duration-150;
+  }
+
+  .btn-ghost {
+    @apply text-stone-600 font-medium rounded-xl px-4 py-2
+           hover:bg-stone-100 active:scale-95 transition-all duration-150;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .bg-brand-500 { background-color: var(--brand-500); }
+  .bg-brand-600 { background-color: var(--brand-600); }
+  .text-brand-500 { color: var(--brand-500); }
+  .border-brand-500 { border-color: var(--brand-500); }
+}
+
+/* Question full-screen styles */
+.question-screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* KaTeX display math */
+.katex-display {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+/* Progress bar animation */
+@keyframes progress-fill {
+  from { width: 0%; }
+  to   { width: var(--progress); }
+}
+
+.progress-bar {
+  animation: progress-fill 0.6s ease-out forwards;
+}
+
+/* Streak fire animation */
+@keyframes flicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); }
+  50%       { transform: scale(1.1) rotate(2deg); }
+}
+
+.streak-fire {
+  animation: flicker 1s ease-in-out infinite;
+}
+
+/* Correct answer flash */
+@keyframes correct-flash {
+  0%   { background-color: #d1fae5; }
+  100% { background-color: transparent; }
+}
+
+.answer-correct {
+  animation: correct-flash 0.8s ease-out;
+}
+
+/* Wrong answer shake */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-8px); }
+  75%       { transform: translateX(8px); }
+}
+
+.answer-wrong {
+  animation: shake 0.4s ease-out;
+}
+
+@keyframes slide-up {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
