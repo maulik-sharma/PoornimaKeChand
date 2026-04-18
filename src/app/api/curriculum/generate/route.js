@@ -91,6 +91,7 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
       ...(curriculumData.weeklyPlan?.week4 ?? []),
     ];
 
+    // ── Step 1: Create curriculum + all modules (no prerequisite links yet) ──
     const curriculum = await prisma.curriculum.create({
       data: {
         studentId,
@@ -116,8 +117,45 @@ Generate a 4-week personalized curriculum. Return JSON only with this shape:
           })),
         },
       },
-      include: { modules: true },
+      include: { modules: { orderBy: { orderIndex: "asc" } } },
     });
+
+    // ── Step 2: Link prerequisites using the AI's moduleId as a stable key ──
+    // Build a map from the AI's temp moduleId → real DB id (by orderIndex match)
+    const aiIdToDbId = new Map();
+    allModules.forEach((aiMod, index) => {
+      const dbMod = curriculum.modules[index];
+      if (dbMod && aiMod.moduleId) {
+        aiIdToDbId.set(aiMod.moduleId, dbMod.id);
+      }
+    });
+
+    // For every module that has prerequisites listed, link them in the DB
+    const prereqUpdates = allModules
+      .map((aiMod, index) => {
+        const prereqIds = (aiMod.prerequisites ?? [])
+          .map((prereqAiId) => aiIdToDbId.get(prereqAiId))
+          .filter(Boolean);
+
+        if (prereqIds.length === 0) return null;
+
+        const dbModId = curriculum.modules[index]?.id;
+        if (!dbModId) return null;
+
+        return prisma.module.update({
+          where: { id: dbModId },
+          data: {
+            prerequisites: {
+              connect: prereqIds.map((id) => ({ id })),
+            },
+          },
+        });
+      })
+      .filter(Boolean);
+
+    if (prereqUpdates.length > 0) {
+      await Promise.all(prereqUpdates);
+    }
 
     return NextResponse.json({
       curriculum: curriculumData,

@@ -97,6 +97,11 @@ model Module {
 
   curriculum   Curriculum    @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
   quizAttempts QuizAttempt[]
+
+  // Prerequisite chain: modules that must be completed before this one
+  prerequisites Module[] @relation("ModulePrerequisites")
+  // Modules that depend on this module being completed
+  dependents    Module[] @relation("ModulePrerequisites")
 }
 
 model QuizAttempt {
